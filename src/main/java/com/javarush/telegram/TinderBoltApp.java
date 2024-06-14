@@ -35,6 +35,9 @@ public class TinderBoltApp extends MultiSessionTelegramBot {
     public static final String OPEN_AI_TOKEN = property.getProperty("OPEN_AI_TOKEN");
 
     private DialogMode currentMode = null;
+    private UserInfo me;
+    private UserInfo she;
+    private int questionCount;
     private final ArrayList<String> list = new ArrayList<>();
     private final ChatGPTService chatGPT = new ChatGPTService(OPEN_AI_TOKEN);
 
@@ -70,10 +73,15 @@ public class TinderBoltApp extends MultiSessionTelegramBot {
             return;
         }
 
-        if (currentMode == DialogMode.GPT) {
+        if (currentMode == DialogMode.GPT && !isMessageCommand()) {
             String promt = loadPrompt("gpt");
-            Message msg = sendTextMessage("Подождите пару секунд - ChatGPT думает ... ");
+            // Отправка сообщения пользователю с информацией о том, что ChatGPT работает над ответом
+            Message msg = sendTextMessage("Подождите пару секунд - ChatGPT думает \uD83E\uDDE0 ... ");
+
+            // Отправка запроса в ChatGPT с использованием заданного prompt и информации о пользователе
             String answer = chatGPT.sendMessage(promt, message);
+
+            // Обновление ранее отправленного сообщения ответом от ChatGPT
             updateTextMessage(msg, answer);
             return;
         }
@@ -92,7 +100,7 @@ public class TinderBoltApp extends MultiSessionTelegramBot {
             return;
         }
 
-        if (currentMode == DialogMode.DATE) {
+        if (currentMode == DialogMode.DATE && !isMessageCommand()) {
             String query = getCallbackQueryButtonKey();
             if (query.startsWith("date_")) {
                 sendPhotoMessage(query);
@@ -103,8 +111,13 @@ public class TinderBoltApp extends MultiSessionTelegramBot {
                 return;
             }
 
+            // Отправка сообщения пользователю с информацией о том, что ChatGPT работает над ответом
             Message msg = sendTextMessage("Подождите, девушка набирает текст ... ");
+
+            // Отправка запроса в ChatGPT с использованием заданного prompt и информации о пользователе
             String answer = chatGPT.addMessage(message);
+
+            // Обновление ранее отправленного сообщения ответом от ChatGPT
             updateTextMessage(msg, answer);
             return;
         }
@@ -120,15 +133,20 @@ public class TinderBoltApp extends MultiSessionTelegramBot {
             return;
         }
 
-        if (currentMode == DialogMode.MESSAGE) {
+        if (currentMode == DialogMode.MESSAGE && !isMessageCommand()) {
             String query = getCallbackQueryButtonKey();
             if (query.startsWith("message_")) {
                 sendPhotoMessage(query);
                 String promt = loadPrompt(query);
                 String userChatHistory = String.join("\n\n", list);
 
-                Message msg = sendTextMessage("Подождите пару секунд - ChatGPT думает ... ");
+                // Отправка сообщения пользователю с информацией о том, что ChatGPT работает над ответом
+                Message msg = sendTextMessage("Подождите пару секунд - ChatGPT думает \uD83E\uDDE0 ... ");
+
+                // Отправка запроса в ChatGPT с использованием заданного prompt и информации о пользователе
                 String answer = chatGPT.sendMessage(promt, userChatHistory);
+
+                // Обновление ранее отправленного сообщения ответом от ChatGPT
                 updateTextMessage(msg, answer);
                 return;
             }
@@ -136,6 +154,123 @@ public class TinderBoltApp extends MultiSessionTelegramBot {
             list.add(message);
 
 
+            return;
+        }
+
+
+        // PROFILE
+        if (message.equals("/profile")) {
+            currentMode = DialogMode.PROFILE;
+            sendPhotoMessage("profile");
+
+            me = new UserInfo();
+            questionCount = 1;
+            sendTextMessage("Как вас зовут?");
+            return;
+        }
+
+        if (currentMode == DialogMode.PROFILE && !isMessageCommand()) {
+
+            switch (questionCount) {
+                case 1:
+                    me.name = message;
+
+                    questionCount = 2;
+                    sendTextMessage("Из какого вы города");
+                    return;
+                case 2:
+                    me.city = message;
+
+                    questionCount = 3;
+                    sendTextMessage("Сколько вам лет?");
+                    return;
+                case 3:
+                    me.age = message;
+
+                    questionCount = 4;
+                    sendTextMessage("Кем вы работаете?");
+                    return;
+                case 4:
+                    me.occupation = message;
+
+                    questionCount = 5;
+                    sendTextMessage("У вас есть хобби?");
+                    return;
+                case 5:
+                    me.hobby = message;
+
+                    String aboutMySelf = me.toString();
+                    String promt = loadPrompt("profile");
+
+                    // Отправка сообщения пользователю с информацией о том, что ChatGPT работает над ответом
+                    Message msg = sendTextMessage("Подождите пару секунд - ChatGPT думает \uD83E\uDDE0... ");
+
+                    // Отправка запроса в ChatGPT с использованием заданного prompt и информации о пользователе
+                    String answer = chatGPT.sendMessage(promt, aboutMySelf);
+
+                    // Обновление ранее отправленного сообщения ответом от ChatGPT
+                    updateTextMessage(msg, answer);
+                    return;
+            }
+
+
+            return;
+        }
+
+        //OPENER
+        if (message.equals("/opener")) {
+            currentMode = DialogMode.OPENER;
+            sendPhotoMessage("opener");
+
+            she = new UserInfo();
+            questionCount = 1;
+            sendTextMessage("Имя девушки?");
+            return;
+        }
+
+        if (currentMode == DialogMode.OPENER && !isMessageCommand()) {
+            switch (questionCount) {
+                case 1:
+                    she.name = message;
+
+                    questionCount = 2;
+                    sendTextMessage("Из какого она города");
+                    return;
+                case 2:
+                    she.city = message;
+
+                    questionCount = 3;
+                    sendTextMessage("Сколько ей лет?");
+                    return;
+                case 3:
+                    she.age = message;
+
+                    questionCount = 4;
+                    sendTextMessage("Кем она работает?");
+                    return;
+                case 4:
+                    she.occupation = message;
+
+                    questionCount = 5;
+                    sendTextMessage("У нее есть хобби?");
+                    return;
+                case 5:
+                    she.hobby = message;
+
+                    String aboutFriend = she.toString();
+                    String promt = loadPrompt("opener");
+
+                    // Отправка сообщения пользователю с информацией о том, что ChatGPT работает над ответом
+                    Message msg = sendTextMessage("Подождите пару секунд - ChatGPT думает \uD83E\uDDE0... ");
+
+                    System.out.println(she.toString());
+                    // Отправка запроса в ChatGPT с использованием заданного prompt и информации о пользователе
+                    String answer = chatGPT.sendMessage(promt, aboutFriend);
+
+                    // Обновление ранее отправленного сообщения ответом от ChatGPT
+                    updateTextMessage(msg, answer);
+                    return;
+            }
             return;
         }
 
