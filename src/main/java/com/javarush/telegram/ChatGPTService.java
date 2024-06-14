@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ChatGPTService {
-    private ChatGPT chatGPT;
+    private final ChatGPT chatGPT;
 
     private List<Message> messageHistory = new ArrayList<>(); //История переписки с ChatGPT - нужна для диалогов
 
@@ -70,7 +70,7 @@ public class ChatGPTService {
      */
     private String sendMessagesToChatGPT(){
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model(ChatCompletion.Model.GPT4Turbo.getName()) // GPT4Turbo or GPT_3_5_TURBO версия
+                .model(ChatCompletion.Model.GPT_3_5_TURBO.getName()) // GPT4Turbo or GPT_3_5_TURBO версия
                 .messages(messageHistory)
                 .maxTokens(3000)
                 .temperature(0.9)
